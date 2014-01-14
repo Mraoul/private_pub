@@ -22,7 +22,7 @@ module PrivatePub
       raise ArgumentError, "The #{environment} environment does not exist in #{filename}" if yaml.nil?
       yaml.each { |k, v| config[k.to_sym] = v }
 
-      if "client_address" not in config
+      if !config.has_key?(:client_address)
          config[:client_address] = config[:server_address] 
 	  end
     end
