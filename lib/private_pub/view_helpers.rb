@@ -6,7 +6,7 @@ module PrivatePub
     # on the client. Otherwise it will be converted to JSON
     # for use in a JavaScript callback.
     def publish_to(channel, data = nil, &block)
-      PrivatePub.publish_to(channel, data || capture(&block))
+      PrivatePub.publish_to_from_client(channel, data || capture(&block))
     end
 
     # Subscribe the client to the given channel. This generates

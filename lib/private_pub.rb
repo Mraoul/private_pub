@@ -21,18 +21,26 @@ module PrivatePub
       yaml = YAML.load_file(filename)[environment.to_s]
       raise ArgumentError, "The #{environment} environment does not exist in #{filename}" if yaml.nil?
       yaml.each { |k, v| config[k.to_sym] = v }
+
+      if "client_address" not in config
+         config[:client_address] = config[:server_address] 
+	  end
     end
 
     # Publish the given data to a specific channel. This ends up sending
     # a Net::HTTP POST request to the Faye server.
     def publish_to(channel, data)
-      publish_message(message(channel, data))
+      publish_message(message(channel, data), config[:server_address])
+    end
+
+    def publish_to_from_client(channel, data)
+		publish_message(message(channel, data), config[:client_address])
     end
 
     # Sends the given message hash to the Faye server using Net::HTTP.
-    def publish_message(message)
+    def publish_message(message, address)
       raise Error, "No server specified, ensure private_pub.yml was loaded properly." unless config[:server]
-      url = URI.parse(config[:server])
+      url = URI.parse(address)
 
       form = Net::HTTP::Post.new(url.path.empty? ? '/' : url.path)
       form.set_form_data(:message => message.to_json)
@@ -56,7 +64,7 @@ module PrivatePub
     # Returns a subscription hash to pass to the PrivatePub.sign call in JavaScript.
     # Any options passed are merged to the hash.
     def subscription(options = {})
-      sub = {:server => config[:server], :timestamp => (Time.now.to_f * 1000).round}.merge(options)
+      sub = {:server => config[:client_address], :timestamp => (Time.now.to_f * 1000).round}.merge(options)
       sub[:signature] = Digest::SHA1.hexdigest([config[:secret_token], sub[:channel], sub[:timestamp]].join)
       sub
     end
